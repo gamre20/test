@@ -1,0 +1,36 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  labels:
+    operators.coreos.com/lvms-operator.openshift-storage: ''
+  name: lvms-operator
+  namespace: openshift-storage
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  channel: stable-4.13
+  installPlanApproval: Automatic
+  name: lvms-operator
+  source: redhat-operators
+  sourceNamespace: openshift-marketplace
+  startingCSV: lvms-operator.v4.13.1
+  
+--- 
+apiVersion: batch/v1
+kind: Job
+metadata:
+  generateName: sync-wave-delay-
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+spec:
+  ttlSecondsAfterFinished: 30
+  template:
+    spec:
+      containers:
+      - name: wait-60s
+        image: perl
+        command: ["sleep",  "60"]
+      restartPolicy: Never
