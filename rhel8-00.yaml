@@ -13,37 +13,49 @@ metadata:
         }
       ]
   labels:
-    app: rhel8-00
-    vm.kubevirt.io/template: rhel8-server-small
+    app: rhel9-00
+    vm.kubevirt.io/template: rhel9-server-small
     vm.kubevirt.io/template.namespace: openshift
     vm.kubevirt.io/template.revision: '1'
     vm.kubevirt.io/template.version: v0.25.0
-  name: rhel8-00
+  name: rhel9-00
   namespace: virtual-machines
 spec:
   dataVolumeTemplates:
-    - apiVersion: cdi.kubevirt.io/v1beta1
-      kind: DataVolume
-      metadata:
-        name: rhel8-00
+    - metadata:
+        name: rhel9-00
       spec:
-        sourceRef:
-          kind: DataSource
-          name: rhel8
-          namespace: openshift-virtualization-os-images
+        preallocation: false
+        source:
+          http:
+            url: >-
+              https://access.cdn.redhat.com/content/origin/files/sha256/08/087f5387f28e6edf1f770ec7eb41e56823b6c3c4d4c3ef09b3b61f59440c229c/rhel-9.2-x86_64-boot.iso?user=c4c4ca3c40a71c424485ac6198c9c6e5&_auth_=1692284896_104547fa89332f10a498932c11b9b969
+        storage:
+          resources:
+            requests:
+              storage: 2Gi
+          storageClassName: lvms-vg1
+    - metadata:
+        name: rhel9-00-rootdisk
+      spec:
+        preallocation: false
+        source:
+          blank: {}
         storage:
           resources:
             requests:
               storage: 30Gi
+          storageClassName: lvms-vg1
   running: false
   template:
     metadata:
       annotations:
         vm.kubevirt.io/flavor: small
-        vm.kubevirt.io/os: rhel8
+        vm.kubevirt.io/os: rhel9
         vm.kubevirt.io/workload: server
+      creationTimestamp: null
       labels:
-        kubevirt.io/domain: rhel8-00
+        kubevirt.io/domain: rhel9-00
         kubevirt.io/size: small
     spec:
       domain:
@@ -53,16 +65,27 @@ spec:
           threads: 1
         devices:
           disks:
+            - bootOrder: 1
+              cdrom:
+                bus: sata
+              name: boot-disk
             - disk:
                 bus: virtio
               name: rootdisk
           interfaces:
-            - macAddress: '02:a0:72:00:00:02'
+            - macAddress: '02:a0:72:00:00:06'
               masquerade: {}
               model: virtio
               name: default
           networkInterfaceMultiqueue: true
           rng: {}
+        features:
+          acpi: {}
+          smm:
+            enabled: true
+        firmware:
+          bootloader:
+            efi: {}
         machine:
           type: pc-q35-rhel9.2.0
         resources:
@@ -75,5 +98,8 @@ spec:
       terminationGracePeriodSeconds: 180
       volumes:
         - dataVolume:
-            name: rhel8-00
+            name: rhel9-00
+          name: boot-disk
+        - dataVolume:
+            name: rhel9-00-rootdisk
           name: rootdisk
